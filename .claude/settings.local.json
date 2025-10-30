@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(pnpm add date-fns-tz)"
-    ],
-    "deny": [],
-    "ask": []
-  }
-}
