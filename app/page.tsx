@@ -117,7 +117,10 @@ export default function Page() {
         );
     }
 
-    if (!isNovember && !devOverride) {
+    if (
+        !isNovember &&
+        process.env.NEXT_PUBLIC_DISABLE_COUNTDOWN_PAGE !== 'true'
+    ) {
         return (
             <>
                 <div className='fixed top-4 right-4 z-50 flex gap-2'>
