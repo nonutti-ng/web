@@ -16,12 +16,12 @@ export default function AuthRedirectPage() {
         if (provider !== 'reddit') {
             authClient.signIn.social({
                 provider,
-                callbackURL: `${window.location.origin}/auth/callback`,
+                callbackURL: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/auth/callback`,
             });
         } else {
             authClient.linkSocial({
                 provider,
-                callbackURL: `${window.location.origin}/auth/callback`,
+                callbackURL: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/auth/callback`,
             });
         }
     }, [router]);
