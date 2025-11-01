@@ -3,23 +3,7 @@
  * All dates from the server are assumed to be in UTC
  */
 
-import { format, parseISO, addMinutes } from 'date-fns';
-import { formatInTimeZone, toZonedTime, fromZonedTime } from 'date-fns-tz';
-
-/**
- * Parse UTC offset string to minutes
- * e.g., "+05:30" => 330, "-07:00" => -420
- */
-function parseUTCOffsetToMinutes(offset: string): number {
-    const match = offset.match(/([+-])(\d{1,2}):?(\d{2})?/);
-    if (!match) return 0;
-
-    const sign = match[1] === '+' ? 1 : -1;
-    const hours = parseInt(match[2]);
-    const minutes = parseInt(match[3] || '0');
-
-    return sign * (hours * 60 + minutes);
-}
+import { DateTime } from 'luxon';
 
 /**
  * Check if timezone is a UTC offset (starts with + or -)
@@ -29,10 +13,40 @@ function isUTCOffset(timezone: string): boolean {
 }
 
 /**
+ * Convert UTC offset string to Luxon-compatible zone name
+ * e.g., "+05:30" => "UTC+5:30", "-07:00" => "UTC-7"
+ */
+function normalizeTimezone(timezone: string): string {
+    if (isUTCOffset(timezone)) {
+        // Luxon expects "UTC+5:30" or "UTC-7" format
+        return `UTC${timezone}`;
+    }
+    return timezone;
+}
+
+/**
+ * Parse input to a Luxon DateTime object
+ */
+function parseToDateTime(date: string | Date | number, timezone: string): DateTime {
+    const zone = normalizeTimezone(timezone);
+
+    if (typeof date === 'string') {
+        // Parse ISO string, assume it's in UTC
+        return DateTime.fromISO(date, { zone: 'utc' }).setZone(zone);
+    } else if (typeof date === 'number') {
+        // Parse timestamp
+        return DateTime.fromMillis(date, { zone: 'utc' }).setZone(zone);
+    } else {
+        // Parse Date object
+        return DateTime.fromJSDate(date, { zone: 'utc' }).setZone(zone);
+    }
+}
+
+/**
  * Format a date string (ISO or Date object) to a readable format in the specified timezone
  * @param date - ISO date string, Date object, or timestamp
  * @param timezone - IANA timezone string (e.g., 'America/New_York') or UTC offset (e.g., '+05:30')
- * @param formatString - date-fns format string (default: 'MMM d, yyyy')
+ * @param formatString - Luxon format string (default: 'MMM d, yyyy')
  */
 export function formatDateInTimezone(
     date: string | Date | number,
@@ -40,26 +54,14 @@ export function formatDateInTimezone(
     formatString: string = 'MMM d, yyyy'
 ): string {
     try {
-        let dateObj: Date;
-        if (typeof date === 'string') {
-            dateObj = parseISO(date);
-        } else if (typeof date === 'number') {
-            dateObj = new Date(date);
-        } else {
-            dateObj = date;
+        const dt = parseToDateTime(date, timezone);
+
+        if (!dt.isValid) {
+            console.error('Invalid date:', dt.invalidReason);
+            return 'Invalid date';
         }
 
-        // Handle UTC offset format
-        if (isUTCOffset(timezone)) {
-            const offsetMinutes = parseUTCOffsetToMinutes(timezone);
-            // Convert UTC date to the target offset
-            const utcTime = dateObj.getTime();
-            const localDate = new Date(utcTime + offsetMinutes * 60 * 1000);
-            return format(localDate, formatString);
-        }
-
-        // Handle IANA timezone
-        return formatInTimeZone(dateObj, timezone, formatString);
+        return dt.toFormat(formatString);
     } catch (error) {
         console.error('Error formatting date:', error);
         return 'Invalid date';
@@ -98,12 +100,9 @@ export function formatTime(date: string | Date | number, timezone: string): stri
  * Get current date in the specified timezone
  */
 export function getCurrentDateInTimezone(timezone: string): Date {
-    if (isUTCOffset(timezone)) {
-        const now = new Date();
-        const offsetMinutes = parseUTCOffsetToMinutes(timezone);
-        return new Date(now.getTime() + offsetMinutes * 60 * 1000);
-    }
-    return toZonedTime(new Date(), timezone);
+    const zone = normalizeTimezone(timezone);
+    const now = DateTime.now().setZone(zone);
+    return now.toJSDate();
 }
 
 /**
@@ -111,9 +110,9 @@ export function getCurrentDateInTimezone(timezone: string): Date {
  * This is useful for date comparisons
  */
 export function getTodayStartInTimezone(timezone: string): Date {
-    const now = toZonedTime(new Date(), timezone);
-    now.setHours(0, 0, 0, 0);
-    return now;
+    const zone = normalizeTimezone(timezone);
+    const now = DateTime.now().setZone(zone).startOf('day');
+    return now.toJSDate();
 }
 
 /**
@@ -121,16 +120,15 @@ export function getTodayStartInTimezone(timezone: string): Date {
  */
 export function formatRelativeDate(date: string | Date | number, timezone: string): string {
     try {
-        const targetDate = typeof date === 'string' ? parseISO(date) : new Date(date);
-        const zonedTargetDate = toZonedTime(targetDate, timezone);
-        const zonedToday = toZonedTime(new Date(), timezone);
+        const zone = normalizeTimezone(timezone);
+        const targetDate = parseToDateTime(date, timezone).startOf('day');
+        const today = DateTime.now().setZone(zone).startOf('day');
 
-        // Set to start of day for comparison
-        zonedTargetDate.setHours(0, 0, 0, 0);
-        zonedToday.setHours(0, 0, 0, 0);
+        if (!targetDate.isValid) {
+            return 'Invalid date';
+        }
 
-        const diffTime = zonedToday.getTime() - zonedTargetDate.getTime();
-        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        const diffDays = today.diff(targetDate, 'days').days;
 
         if (diffDays === 0) return 'Today';
         if (diffDays === 1) return 'Yesterday';
@@ -148,7 +146,7 @@ export function formatRelativeDate(date: string | Date | number, timezone: strin
  * The server expects UTC, so we convert from the user's timezone to UTC
  */
 export function dateToUTC(date: Date): string {
-    return date.toISOString();
+    return DateTime.fromJSDate(date, { zone: 'utc' }).toISO() || '';
 }
 
 /**
@@ -156,15 +154,15 @@ export function dateToUTC(date: Date): string {
  */
 export function isToday(date: string | Date | number, timezone: string): boolean {
     try {
-        const targetDate = typeof date === 'string' ? parseISO(date) : new Date(date);
-        const zonedTargetDate = toZonedTime(targetDate, timezone);
-        const zonedToday = toZonedTime(new Date(), timezone);
+        const zone = normalizeTimezone(timezone);
+        const targetDate = parseToDateTime(date, timezone).startOf('day');
+        const today = DateTime.now().setZone(zone).startOf('day');
 
-        return (
-            zonedTargetDate.getFullYear() === zonedToday.getFullYear() &&
-            zonedTargetDate.getMonth() === zonedToday.getMonth() &&
-            zonedTargetDate.getDate() === zonedToday.getDate()
-        );
+        if (!targetDate.isValid) {
+            return false;
+        }
+
+        return targetDate.equals(today);
     } catch (error) {
         console.error('Error checking if date is today:', error);
         return false;
@@ -184,18 +182,15 @@ export function getDateStringForComparison(date: string | Date | number, timezon
  * This is useful for the NNN calendar where we want day 1-30
  */
 export function createNovemberDate(year: number, day: number, timezone: string): Date {
-    if (isUTCOffset(timezone)) {
-        // For UTC offsets, create the date in UTC then adjust
-        const utcDate = new Date(Date.UTC(year, 10, day, 0, 0, 0, 0));
-        const offsetMinutes = parseUTCOffsetToMinutes(timezone);
-        // We want to return a date that when displayed will show the right day
-        // So we adjust by the offset
-        return new Date(utcDate.getTime() + offsetMinutes * 60 * 1000);
-    }
+    const zone = normalizeTimezone(timezone);
 
-    // Create date in the specified IANA timezone
-    const dateStr = `${year}-11-${String(day).padStart(2, '0')}T00:00:00`;
-    return toZonedTime(new Date(dateStr), timezone);
+    // Create date at midnight on the specified day in the target timezone
+    const dt = DateTime.fromObject(
+        { year, month: 11, day, hour: 0, minute: 0, second: 0, millisecond: 0 },
+        { zone }
+    );
+
+    return dt.toJSDate();
 }
 
 /**
@@ -207,69 +202,32 @@ export function getTimeUntilNovember(timezone: string): {
     minutes: number;
     seconds: number;
 } {
-    // Get current time
-    const now = new Date();
+    const zone = normalizeTimezone(timezone);
 
-    if (isUTCOffset(timezone)) {
-        // Handle UTC offset
-        const offsetMinutes = parseUTCOffsetToMinutes(timezone);
-
-        // Get current time in the target timezone
-        const nowInZone = new Date(now.getTime() + offsetMinutes * 60 * 1000);
-        const currentYear = nowInZone.getUTCFullYear();
-        const currentMonth = nowInZone.getUTCMonth(); // 0-indexed, November = 10
-
-        // Determine target year - if we're in November or later, target next year
-        let targetYear = currentYear;
-        if (currentMonth >= 10) {
-            targetYear = currentYear + 1;
-        }
-
-        // Create November 1st midnight in UTC
-        const nov1UTC = new Date(Date.UTC(targetYear, 10, 1, 0, 0, 0, 0));
-
-        // Adjust for the offset to get "Nov 1 midnight in this offset" as a UTC timestamp
-        // If offset is +05:30, Nov 1 midnight there is Nov 1 00:00 - 5:30 = Oct 31 18:30 UTC
-        const nov1MidnightInZone = new Date(nov1UTC.getTime() - offsetMinutes * 60 * 1000);
-
-        // Calculate difference from now
-        const difference = nov1MidnightInZone.getTime() - now.getTime();
-
-        return {
-            days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-            hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-            minutes: Math.floor((difference / 1000 / 60) % 60),
-            seconds: Math.floor((difference / 1000) % 60),
-        };
-    }
-
-    // Handle IANA timezone
-    // Convert current time to the user's timezone to check year/month
-    const nowInZone = toZonedTime(now, timezone);
-    const currentYear = nowInZone.getFullYear();
-    const currentMonth = nowInZone.getMonth(); // 0-indexed, November = 10
+    // Get current time in the target timezone
+    const now = DateTime.now().setZone(zone);
+    const currentYear = now.year;
+    const currentMonth = now.month; // 1-indexed, November = 11
 
     // Determine target year - if we're in November or later, target next year
     let targetYear = currentYear;
-    if (currentMonth >= 10) {
+    if (currentMonth >= 11) {
         targetYear = currentYear + 1;
     }
 
-    // Create a date representing "November 1st 00:00:00" in the target timezone
-    // This creates a local date as if you're in that timezone
-    const nov1LocalDate = new Date(targetYear, 10, 1, 0, 0, 0, 0);
+    // Create November 1st midnight in the target timezone
+    const nov1 = DateTime.fromObject(
+        { year: targetYear, month: 11, day: 1, hour: 0, minute: 0, second: 0, millisecond: 0 },
+        { zone }
+    );
 
-    // Convert this "local time in target timezone" to UTC
-    // fromZonedTime takes a date and treats it as if it were in the given timezone
-    const nov1stUTC = fromZonedTime(nov1LocalDate, timezone);
-
-    // Calculate difference from now
-    const difference = nov1stUTC.getTime() - now.getTime();
+    // Calculate difference
+    const diff = nov1.diff(now, ['days', 'hours', 'minutes', 'seconds']);
 
     return {
-        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-        minutes: Math.floor((difference / 1000 / 60) % 60),
-        seconds: Math.floor((difference / 1000) % 60),
+        days: Math.floor(diff.days),
+        hours: Math.floor(diff.hours % 24),
+        minutes: Math.floor(diff.minutes % 60),
+        seconds: Math.floor(diff.seconds % 60),
     };
 }

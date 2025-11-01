@@ -239,8 +239,7 @@ export function LandingPage({
                         >
                             Terms of Service
                         </a>
-                        . We'll also automatically add you to our Discord
-                        server, where you can connect with other participants.
+                        .
                     </p>
                 </CardContent>
             </Card>

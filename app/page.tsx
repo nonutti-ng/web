@@ -7,6 +7,7 @@ import { OnboardingPage } from '@/components/onboarding-page';
 import { DashboardPage } from '@/components/dashboard-page';
 import { NavBar } from '@/components/nav-bar';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { AutoShowChangelog } from '@/components/changelog-dialog';
 import { useSession, signOut } from '@/lib/auth-client';
 import { apiController } from '@/lib/api-controller';
 
@@ -164,6 +165,7 @@ export default function Page() {
                 onToggleDevOverride={toggleDevOverride}
             />
             <DashboardPage userData={apiUser} />
+            <AutoShowChangelog />
         </>
     );
 }

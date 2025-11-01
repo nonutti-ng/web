@@ -82,8 +82,9 @@ export function DashboardPage({ userData }: DashboardPageProps) {
                 const currentStatus = tryData.try.state as 'in' | 'out';
                 setStatus(currentStatus);
 
-                // Check if already checked in today
-                const today = getDateStringForComparison(new Date(), timezone);
+                // Check if already checked in today (use timezone-aware current date)
+                const todayInTimezone = getCurrentDateInTimezone(timezone);
+                const today = getDateStringForComparison(todayInTimezone, timezone);
                 const todayCheckIn = formattedCheckIns.find(
                     (c) => c.date === today,
                 );
@@ -144,7 +145,8 @@ export function DashboardPage({ userData }: DashboardPageProps) {
             // Call the API to log the status
             const result = await apiController.log(newStatus);
 
-            const today = getDateStringForComparison(new Date(), timezone);
+            const todayInTimezone = getCurrentDateInTimezone(timezone);
+            const today = getDateStringForComparison(todayInTimezone, timezone);
             const newCheckIn = {
                 id: result.id,
                 date: today,
@@ -201,20 +203,43 @@ export function DashboardPage({ userData }: DashboardPageProps) {
         setIsCheckingIn(true);
 
         try {
-            // Call the API to log the OUT status
-            const result = await apiController.log('out');
+            const todayInTimezone = getCurrentDateInTimezone(timezone);
+            const today = getDateStringForComparison(todayInTimezone, timezone);
 
-            const today = getDateStringForComparison(new Date(), timezone);
-            const newCheckIn = {
-                id: result.id,
-                date: today,
-                status: 'out' as const,
-            };
+            // Check if there's already an entry for today
+            const existingEntry = checkIns.find((c) => c.date === today);
 
-            const updatedCheckIns = checkIns.filter((c) => c.date !== today);
-            updatedCheckIns.push(newCheckIn);
+            if (existingEntry) {
+                // If already checked in today, fail the existing entry
+                await apiController.failTry(existingEntry.id);
 
-            setCheckIns(updatedCheckIns);
+                // Update local state
+                const newCheckIn = {
+                    id: existingEntry.id,
+                    date: today,
+                    status: 'out' as const,
+                };
+
+                const updatedCheckIns = checkIns.filter((c) => c.date !== today);
+                updatedCheckIns.push(newCheckIn);
+
+                setCheckIns(updatedCheckIns);
+            } else {
+                // No existing entry, create a new OUT log
+                const result = await apiController.log('out');
+
+                const newCheckIn = {
+                    id: result.id,
+                    date: today,
+                    status: 'out' as const,
+                };
+
+                const updatedCheckIns = checkIns.filter((c) => c.date !== today);
+                updatedCheckIns.push(newCheckIn);
+
+                setCheckIns(updatedCheckIns);
+            }
+
             setStatus('out');
             setHasCheckedInToday(true);
 
@@ -247,20 +272,43 @@ export function DashboardPage({ userData }: DashboardPageProps) {
         setIsCheckingIn(true);
 
         try {
-            // Call the API to log the OUT status
-            const result = await apiController.log('out');
+            const todayInTimezone = getCurrentDateInTimezone(timezone);
+            const today = getDateStringForComparison(todayInTimezone, timezone);
 
-            const today = getDateStringForComparison(new Date(), timezone);
-            const newCheckIn = {
-                id: result.id,
-                date: today,
-                status: 'out' as const,
-            };
+            // Check if there's already an entry for today
+            const existingEntry = checkIns.find((c) => c.date === today);
 
-            const updatedCheckIns = checkIns.filter((c) => c.date !== today);
-            updatedCheckIns.push(newCheckIn);
+            if (existingEntry) {
+                // If already checked in today, fail the existing entry
+                await apiController.failTry(existingEntry.id);
 
-            setCheckIns(updatedCheckIns);
+                // Update local state
+                const newCheckIn = {
+                    id: existingEntry.id,
+                    date: today,
+                    status: 'out' as const,
+                };
+
+                const updatedCheckIns = checkIns.filter((c) => c.date !== today);
+                updatedCheckIns.push(newCheckIn);
+
+                setCheckIns(updatedCheckIns);
+            } else {
+                // No existing entry, create a new OUT log
+                const result = await apiController.log('out');
+
+                const newCheckIn = {
+                    id: result.id,
+                    date: today,
+                    status: 'out' as const,
+                };
+
+                const updatedCheckIns = checkIns.filter((c) => c.date !== today);
+                updatedCheckIns.push(newCheckIn);
+
+                setCheckIns(updatedCheckIns);
+            }
+
             setStatus('out');
             setHasCheckedInToday(true);
 

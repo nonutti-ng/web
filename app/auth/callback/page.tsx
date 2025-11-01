@@ -28,7 +28,13 @@ function AuthCallbackContent() {
                             );
                             window.close();
                         } else {
-                            router.push('/');
+                            // Check if we have a next URL stored
+                            const nextUrl =
+                                sessionStorage.getItem('auth_next_url') || '/';
+
+                            if (nextUrl !== '/')
+                                sessionStorage.removeItem('auth_next_url');
+                            router.push(nextUrl);
                         }
                     }, 2000);
                     return;
@@ -42,7 +48,13 @@ function AuthCallbackContent() {
                     );
                     window.close();
                 } else {
-                    router.push('/');
+                    // Check if we have a next URL stored
+                    const nextUrl =
+                        sessionStorage.getItem('auth_next_url') || '/';
+
+                    if (nextUrl !== '/')
+                        sessionStorage.removeItem('auth_next_url');
+                    router.push(nextUrl);
                 }
             } catch (err) {
                 console.error('Auth callback error:', err);
@@ -149,9 +161,7 @@ export default function AuthCallbackPage() {
                         <h2 className='text-xl font-semibold text-foreground'>
                             Loading...
                         </h2>
-                        <p className='text-muted-foreground'>
-                            Please wait
-                        </p>
+                        <p className='text-muted-foreground'>Please wait</p>
                     </div>
                 </div>
             }

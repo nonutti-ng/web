@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { LogOut, BarChart3, Home } from 'lucide-react';
+import { LogOut, BarChart3, Home, Settings } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -137,6 +137,12 @@ export function NavBar({
                                     </div>
                                 </div>
                                 <DropdownMenuSeparator />
+                                <DropdownMenuItem asChild>
+                                    <Link href='/settings'>
+                                        <Settings className='mr-2 h-4 w-4' />
+                                        Settings
+                                    </Link>
+                                </DropdownMenuItem>
                                 <div className='md:hidden'>
                                     <DropdownMenuItem asChild>
                                         <Link href='/'>

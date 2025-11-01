@@ -11,6 +11,10 @@ export default function AuthRedirectPage() {
         // Grab the query parameters from the URL (?provider=)
         const params = new URLSearchParams(window.location.search);
         const provider = params.get('provider') || 'discord';
+        const next = params.get('next') || '/';
+
+        // Store the next URL in session storage to use after callback
+        sessionStorage.setItem('auth_next_url', next);
 
         // Call better auth signin
         if (provider !== 'reddit') {
