@@ -877,10 +877,10 @@ export function DashboardPage({ userData }: DashboardPageProps) {
                         <div className='grid grid-cols-7 gap-3'>
                             {Array.from({ length: 30 }, (_, i) => {
                                 const day = i + 1;
-                                const checkIn = checkIns.find((c) => {
-                                    const checkInDate = new Date(c.date);
-                                    return checkInDate.getDate() === day;
-                                });
+                                // Create the date string for this day to compare with checkIns
+                                const dayDate = createNovemberDate(2025, day, timezone);
+                                const dayDateString = getDateStringForComparison(dayDate, timezone);
+                                const checkIn = checkIns.find((c) => c.date === dayDateString);
                                 const isPast = day < currentDay;
                                 const isToday = day === currentDay;
                                 const isFuture = day > currentDay;
