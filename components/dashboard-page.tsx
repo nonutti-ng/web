@@ -71,6 +71,10 @@ export function DashboardPage({ userData }: DashboardPageProps) {
 
                 // Convert entries to the format used by the dashboard
                 // Use timezone-aware date formatting
+                // NOTE: Entry dates from server are UTC timestamps. When converted to user's timezone,
+                // they may appear on a different calendar day than when the user clicked the button.
+                // For example: User in UTC-5 checks in at 11 PM on Nov 2. Server records 4 AM Nov 3 UTC.
+                // When displayed, it converts back to Nov 2, 11 PM in UTC-5 timezone.
                 const formattedCheckIns = tryData.entries.map((entry) => ({
                     id: entry.entryId,
                     date: getDateStringForComparison(entry.date, timezone),
@@ -83,14 +87,42 @@ export function DashboardPage({ userData }: DashboardPageProps) {
                 const currentStatus = tryData.try.state as 'in' | 'out';
                 setStatus(currentStatus);
 
-                // Check if already checked in today (use timezone-aware current date)
+                // Check if already checked in today
+                // Due to timezone differences between server (UTC) and user, we need to check
+                // if there's an entry for today OR if the most recent entry was created within
+                // the last 24 hours (to handle cases where server timestamp differs from user's local day)
                 const todayInTimezone = getCurrentDateInTimezone(timezone);
                 const today = getDateStringForComparison(todayInTimezone, timezone);
-                const todayCheckIn = formattedCheckIns.find(
-                    (c) => c.date === today,
-                );
+
+                // First check for exact date match
+                let todayCheckIn = formattedCheckIns.find((c) => c.date === today);
+
+                // If no exact match, check if the most recent entry is from within the last 20 hours
+                // This handles the case where the server's UTC timestamp puts it on a different day
+                if (!todayCheckIn && formattedCheckIns.length > 0) {
+                    const mostRecentEntry = tryData.entries.reduce((latest, entry) => {
+                        const entryTime = new Date(entry.date).getTime();
+                        const latestTime = new Date(latest.date).getTime();
+                        return entryTime > latestTime ? entry : latest;
+                    });
+
+                    const mostRecentTime = new Date(mostRecentEntry.date).getTime();
+                    const now = Date.now();
+                    const hoursSinceLastEntry = (now - mostRecentTime) / (1000 * 60 * 60);
+
+                    // If the most recent entry was within the last 20 hours, consider it as today
+                    // 20 hours accounts for timezone differences and gives reasonable margin
+                    if (hoursSinceLastEntry < 20) {
+                        todayCheckIn = formattedCheckIns.find(
+                            (c) => c.id === mostRecentEntry.entryId
+                        );
+                    }
+                }
+
                 if (todayCheckIn) {
                     setHasCheckedInToday(true);
+                } else {
+                    setHasCheckedInToday(false);
                 }
             } catch (error) {
                 console.error('Failed to load dashboard data:', error);
@@ -883,7 +915,6 @@ export function DashboardPage({ userData }: DashboardPageProps) {
                                 const checkIn = checkIns.find((c) => c.date === dayDateString);
                                 const isPast = day < currentDay;
                                 const isToday = day === currentDay;
-                                const isFuture = day > currentDay;
                                 const isVisuallyOut = isDayVisuallyOut(day);
                                 const hasMissingData =
                                     isPast && !checkIn && !isVisuallyOut;
