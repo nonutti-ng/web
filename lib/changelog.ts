@@ -29,6 +29,21 @@ export function formatChangelogDate(
 
 export const CHANGELOGS: ChangelogEntry[] = [
     {
+        id: 'v1.0.3',
+        version: '1.0.3',
+        date: '2025-11-05',
+        title: 'Fix check-in date comparison logic',
+        description:
+            'Corrected the logic used to compare check-in dates to ensure accurate tracking of user activity. This fix addresses issues where check-ins were not being recorded properly due to timezone discrepancies.',
+        changes: [
+            {
+                type: 'bugfix',
+                description:
+                    "Updated the date comparison logic in the check-in functionality to use timezone-aware date strings. This ensures that check-ins are accurately recorded regardless of the user's timezone, preventing potential data inconsistencies.",
+            },
+        ],
+    },
+    {
         id: 'v1.0.2',
         version: '1.0.2',
         date: '2025-11-01',
