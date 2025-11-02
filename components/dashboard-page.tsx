@@ -916,6 +916,8 @@ export function DashboardPage({ userData }: DashboardPageProps) {
                                 const isPast = day < currentDay;
                                 const isToday = day === currentDay;
                                 const isVisuallyOut = isDayVisuallyOut(day);
+                                // Today should only show as "needs check-in" if there's no check-in yet
+                                const isTodayNeedsCheckIn = isToday && !checkIn && !isVisuallyOut;
                                 const hasMissingData =
                                     isPast && !checkIn && !isVisuallyOut;
                                 // Tiles are clickable if: past day, not visually OUT, not OUT entry
@@ -940,7 +942,7 @@ export function DashboardPage({ userData }: DashboardPageProps) {
                                                 ? 'bg-amber-500/10 border-amber-500/50 text-amber-600 dark:text-amber-400 hover:scale-105 hover:border-amber-500 cursor-pointer'
                                                 : isPast
                                                 ? 'bg-muted/30 border-border/50 text-muted-foreground/70'
-                                                : isToday
+                                                : isTodayNeedsCheckIn
                                                 ? 'bg-gradient-to-br from-primary/30 to-primary/20 border-primary text-primary ring-4 ring-primary/20 shadow-xl shadow-primary/30 animate-pulse'
                                                 : 'bg-background/50 border-border/30 text-muted-foreground/50 cursor-not-allowed'
                                         }`}
