@@ -62,6 +62,7 @@ export function DashboardPage({ userData }: DashboardPageProps) {
     const [showFailDialog, setShowFailDialog] = useState(false);
     const [failCountdown, setFailCountdown] = useState(5);
     const [canConfirmFail, setCanConfirmFail] = useState(false);
+    const [showTimezoneNotice, setShowTimezoneNotice] = useState(true);
 
     useEffect(() => {
         const fetchCurrentTry = async () => {
@@ -563,6 +564,63 @@ export function DashboardPage({ userData }: DashboardPageProps) {
                                 : undefined
                         }
                     />
+                )}
+
+                {/* Timezone Notice */}
+                {showTimezoneNotice && (
+                    <div className='bg-gradient-to-r from-blue-500/15 via-blue-400/10 to-blue-500/15 border-l-4 border-blue-500 rounded-lg p-4 backdrop-blur shadow-lg'>
+                        <div className='flex items-start gap-3'>
+                            <div className='flex-shrink-0'>
+                                <div className='w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center'>
+                                    <svg
+                                        className='w-5 h-5 text-blue-500'
+                                        fill='currentColor'
+                                        viewBox='0 0 20 20'
+                                    >
+                                        <path
+                                            fillRule='evenodd'
+                                            d='M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z'
+                                            clipRule='evenodd'
+                                        />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div className='flex-1 space-y-2'>
+                                <div className='flex items-start justify-between gap-2'>
+                                    <h3 className='text-sm font-bold text-blue-700 dark:text-blue-300'>
+                                        📢 Server Timezone Announcement
+                                    </h3>
+                                    <button
+                                        onClick={() => setShowTimezoneNotice(false)}
+                                        className='flex-shrink-0 text-blue-600/60 hover:text-blue-600 dark:text-blue-400/60 dark:hover:text-blue-400 transition-colors'
+                                        aria-label='Dismiss notice'
+                                    >
+                                        <svg
+                                            className='w-5 h-5'
+                                            fill='none'
+                                            stroke='currentColor'
+                                            viewBox='0 0 24 24'
+                                        >
+                                            <path
+                                                strokeLinecap='round'
+                                                strokeLinejoin='round'
+                                                strokeWidth={2}
+                                                d='M6 18L18 6M6 6l12 12'
+                                            />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <p className='text-sm text-blue-700/90 dark:text-blue-300/90 leading-relaxed'>
+                                    The server runs in <strong className='font-semibold'>UTC time</strong> and may not accept a check-in until it&apos;s the next day in UTC. This prevents duplicates and spam/abuse.
+                                </p>
+                                <div className='bg-blue-500/10 rounded-md p-3 border border-blue-500/30'>
+                                    <p className='text-xs text-blue-700/90 dark:text-blue-300/90 leading-relaxed'>
+                                        <strong className='font-semibold'>Seeing errors T1001 or T1006?</strong> Please wait until it&apos;s the next day in UTC. If it&apos;s way past midnight UTC and you&apos;re still getting these errors, contact <strong className='font-semibold'>sticksdev</strong> on Discord or <strong className='font-semibold'>u/JustALinuxNerd17</strong> on Reddit.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 )}
 
                 {/* Celebration Banner */}

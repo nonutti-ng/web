@@ -29,6 +29,26 @@ export function formatChangelogDate(
 
 export const CHANGELOGS: ChangelogEntry[] = [
     {
+        id: 'v1.0.2',
+        version: '1.0.2',
+        date: '2025-11-01',
+        title: 'Policies hotfix and timezone clarification',
+        description:
+            "The terms of service (/terms) and privacy policy (/privacy) pages have been fixed to no longer show a 404 error. Additionally, I've clarified the timezone handling near the top of the checkin page to help users understand how dates are managed within the app.",
+        changes: [
+            {
+                type: 'bugfix',
+                description:
+                    'Fixed 404 errors on the terms of service and privacy policy pages. These pages should now load correctly without any issues.',
+            },
+            {
+                type: 'improvement',
+                description:
+                    'Added clarification about timezone handling on the checkin page. This should help users better understand how dates are managed within the app and avoid confusion related to timezone differences.',
+            },
+        ],
+    },
+    {
         id: 'v1.0.1',
         version: '1.0.1',
         date: '2025-11-01',
