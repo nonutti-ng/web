@@ -5,6 +5,7 @@ import { CountdownPage } from '@/components/countdown-page';
 import { LandingPage } from '@/components/landing-page';
 import { OnboardingPage } from '@/components/onboarding-page';
 import { DashboardPage } from '@/components/dashboard-page';
+import { MaintenancePage } from '@/components/maintenance-page';
 import { NavBar } from '@/components/nav-bar';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { AutoShowChangelog } from '@/components/changelog-dialog';
@@ -17,6 +18,11 @@ export default function Page() {
     const [isNovember, setIsNovember] = useState(false);
     const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
     const [devOverride, setDevOverride] = useState(false);
+
+    // Check if maintenance mode is enabled
+    const isMaintenanceMode = process.env.NEXT_PUBLIC_MAINTENANCE_MODE === 'true';
+    const maintenanceReason = process.env.NEXT_PUBLIC_MAINTENANCE_REASON || 'Major timezone refactoring';
+    const maintenanceRedditUrl = process.env.NEXT_PUBLIC_MAINTENANCE_REDDIT_URL || 'https://reddit.com/r/nonutnovember';
 
     useEffect(() => {
         // Check if it's November
@@ -85,6 +91,21 @@ export default function Page() {
         // Refresh page
         window.location.reload();
     };
+
+    // Show maintenance page if enabled
+    if (isMaintenanceMode) {
+        return (
+            <>
+                <div className='fixed top-4 right-4 z-50'>
+                    <ThemeToggle />
+                </div>
+                <MaintenancePage
+                    reason={maintenanceReason}
+                    redditPostUrl={maintenanceRedditUrl}
+                />
+            </>
+        );
+    }
 
     // Show loading state while checking session
     if (isPending) {
